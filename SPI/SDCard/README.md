@@ -1,59 +1,59 @@
 Control of the SD card using the SPI.
 
 XRayDetector(SDCardController)
-SD�J�[�h���g���ăr�b�g���]�����o���邽�߂ɊJ���������C�u�����ł��D
-SDCardController���p�����Ă��܂��D
-�C���X�^���X�̐������@��SDCardController�ɓ����ł��D
+SDカードを使ってビット反転を検出するために開発したライブラリです．
+SDCardControllerを継承しています．
+インスタンスの生成方法はSDCardControllerに同じです．
 
 start_measurement()
-	SD�J�[�h�����r�b�g���]���Ă��邩�v������񓯊��������J�n���܂��D
-	1���[�v������64�u���b�N�ǂݏo���āC�ǂݏo�����r�b�g���S��1�ɖ߂��������s���Ă��܂��D
-	32GB��S�Čv������ɂ�120���Ԓ��x������Ǝv���܂��D	
+	SDカードが何ビット反転しているか計測する非同期処理を開始します．
+	1ループあたり64ブロック読み出して，読み出したビット列を全て1に戻す処理が行われています．
+	32GBを全て計測するには120時間程度かかると思われます．	
 
 stop_measurement()
-	start_measurement()�ŊJ�n�����񓯊��������I�����܂��D
-	�Ăяo���Ă��猻�ݓǂݏo���Ă���u���b�N�����ǂݏI����Ă���C�c��̃u���b�N���Ɋւ�炸�I�����܂��D
-	�������I����Ă��邱�Ƃ������ł��X���b�h��join���Ă���ꏊ�Ȃ̂ŕK���Ăяo���Ă����Ă��������D
+	start_measurement()で開始した非同期処理を終了します．
+	呼び出してから現在読み出しているブロック長分読み終わってから，残りのブロック長に関わらず終了します．
+	処理が終わっていることが明白でもスレッドをjoinしている場所なので必ず呼び出してあげてください．
 
 get_count()
-	���݂̃G���[�r�b�g����Ԃ��܂��D
-	�v�����I�����Ă���Ăяo���Ȃ��ƈӖ��Ȃ��C�����܂��ˁc
-	�����C�D���ȃ^�C�~���O�ŌĂяo���Ȃ瑽�����r�b�g�ǂݏo���Ă��邩�Ƃ����l���ꏏ�ɕԂ�l�ŕԂ��΂����C�����܂��D	
+	現在のエラービット数を返します．
+	計測が終了してから呼び出さないと意味ない気がしますね…
+	もし，好きなタイミングで呼び出すなら多分何ビット読み出しているかという値も一緒に返り値で返せばいい気がします．	
 
 reset_count()
-	���݂̃G���[�r�b�g�������Z�b�g���܂��D
+	現在のエラービット数をリセットします．
 
 set_measurement_blocks_len(len)
-	���u���b�N�ǂݏo���̂��ݒ肵�܂��D
-	������64�u���b�N������Ă���̂ŁC64�̔{���ɂȂ�悤�ɐݒ肵�Ă��������D
+	何ブロック読み出すのか設定します．
+	処理を64ブロックずつやっているので，64の倍数になるように設定してください．
 	
 
 
 SDCardController
-SD�J�[�h��SPI�ʐM�Ő��䂷�邽�߂ɕK�v�ȃ��C�u�����ł��D
-micropython��SD�J�[�h���C�u�������x�[�X�ɍ쐬���Ă��܂��D
-�C���X�^���X�𐶐�����ɂ�Adafruit_BBIO.SPI�̃C���X�^���X�������ɗ^���Ă��������D
-�J�[�h���Ƃɋ������Ⴂ�܂����C����������32GB��SDHC�J�[�h�ł�init_card_v2�CCSD version 2.0���Ăяo����܂����D
-SD�J�[�h��1�u���b�N=512�o�C�g�Ȃ̂ŁCread_blocks��write_blocks�̈���buf�ɂ�512�̔{�����̔z���^���Ă��������D
+SDカードをSPI通信で制御するために必要なライブラリです．
+micropythonのSDカードライブラリをベースに作成しています．
+インスタンスを生成するにはAdafruit_BBIO.SPIのインスタンスを引数に与えてください．
+カードごとに挙動が違いますが，私が試した32GBのSDHCカードではinit_card_v2，CSD version 2.0が呼び出されました．
+SDカードは1ブロック=512バイトなので，read_blocksやwrite_blocksの引数bufには512の倍数長の配列を与えてください．
 
 read_blocks(block_num, buf)
-	block_num:�w�肵���u���b�N����(buf��/512)�u���b�N���ǂݏo���D
-	buf:�ǂݏo���u���b�N�����̔z��
-	��:block_num = 0, buf = [0xff] * 512 * 32�̂Ƃ�
-	read_blocks��0�u���b�N����31�u���b�N�܂ł�32 * 512�o�C�g���̒l���i�[����buf��Ԃ�l�Ƃ��ĕԂ��D
+	block_num:指定したブロックから(buf長/512)ブロック分読み出す．
+	buf:読み出すブロック長分の配列
+	例:block_num = 0, buf = [0xff] * 512 * 32のとき
+	read_blocksは0ブロックから31ブロックまでの32 * 512バイト分の値を格納したbufを返り値として返す．
 
 write_blocks(block_num, buf)
-	block_num:�w�肵���u���b�N����(buf��/512)�u���b�N���������ށD
-	buf:�������ޒl�Q
-	��:block_num = 0, buf = [0xff] * 512 * 32�̂Ƃ�
-	read_blocks��0�u���b�N����31�u���b�N�܂ł�buf�z��ɏ���������D
+	block_num:指定したブロックから(buf長/512)ブロック分書き込む．
+	buf:書き込む値群
+	例:block_num = 0, buf = [0xff] * 512 * 32のとき
+	read_blocksは0ブロックから31ブロックまでをbuf配列に書き換える．
 
 get_sectors()
-	���䂵�Ă���r�c�J�[�h�����u���b�N�ō\������Ă��邩�ǂݏo���D
-	�Ԃ�l*1024�ōő�u���b�N����������D		
-
+	制御しているＳＤカードが何ブロックで構成されているか読み出す．
+	返り値*1024で最大ブロック長が分かる．		
+	
 sample
-�g�p��������Ă��܂��D
+使用例を挙げています．
 
 spi-setup
-sample�������悤��SPI�s���̐ݒ�����Ă܂��D
+sampleが動くようにSPIピンの設定をしてます．
