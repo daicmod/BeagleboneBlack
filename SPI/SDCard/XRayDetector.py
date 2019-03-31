@@ -19,7 +19,7 @@ class XRayDetector(SDCardController):
 		self.start = time.time()
 		self.measure_th = threading.Thread(target = self._measurement_error_async_daemon, daemon = True)
 		self.measure_th.start()
-		return measure_th.is_alive():
+		return self.measure_th.is_alive()
 
 	# To stop the measurement thread
 	# When the timeout argument is present and not None, it should be a floating point number specifying a timeout for the operation in seconds (or fractions thereof).
@@ -29,7 +29,7 @@ class XRayDetector(SDCardController):
 		self.measure_th.join(timeout)
 		self.error_counter = 0
 		self.block_num = 0
-		return measure_th.is_alive()
+		return self.measure_th.is_alive()
 
 	# To get the measurement result now
 	# return: int type
@@ -50,11 +50,14 @@ class XRayDetector(SDCardController):
 		return [complete_rate, elapsed_time]
 
 	# To set the measurement range(Default: Overall measurement)
+	# measurement range = lenth * 512 bytes
 	# lenth: Please set a Multiple of 64(None or More than the maximum value: Overall measurement)
-	def set_measurement_blocks_len(self, lenth = self.sectors * 1024):
-		assert not lenth % 64, 'length is invalid'
+	def set_measurement_blocks_len(self, lenth = None):
+		if lenth == None:
+			lenth = self.sectors * 1024
 		if lenth > self.sectors * 1024:
 			lenth = self.sectors * 1024
+		assert not lenth % 64, 'length is invalid'
 		self.measurement_blocks_len = lenth
 
 	# main measurement loop
