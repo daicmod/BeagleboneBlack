@@ -13,7 +13,7 @@ _TOKEN_CMD25 = 0xfc
 _TOKEN_STOP_TRAN = 0xfd
 _TOKEN_DATA = 0xfe
 
-
+# To control SD card
 class SDCardController:
 	def __init__(self, spi):
 		self.spi = spi		
@@ -100,6 +100,8 @@ class SDCardController:
 				return
 		raise OSError("timeout waiting for v2 card")
 
+	# To send command to control SD card 
+	# return: response from SD card
 	def _cmd(self, cmd, arg, crc, final=0, release=True, skip1=False):
 		# create and send the command
 		buf = [0x40 | cmd, arg >> 24, arg >> 16, arg >> 8, arg, crc]
@@ -123,6 +125,8 @@ class SDCardController:
 		self.spi.writebytes([0xff])
 		return -1
 
+	# To read measseage from SD card
+	# return: list(hex) lenth = len(buf)
 	def _readinto(self, buf):
 		# read until start byte (0xff)
 		while True:
@@ -142,6 +146,7 @@ class SDCardController:
 
 		return buf
 
+	# To write SD card
 	def _write(self, token, buf):
 		# send: start of block, data, checksum
 		self.spi.xfer2(token)
@@ -160,6 +165,7 @@ class SDCardController:
 
 		self.spi.writebytes([0xff])
 
+	# I don't know
 	def _write_token(self, token):
 		self.spi.xfer2(token)
 		self.spi.writebytes([0xff])
@@ -169,6 +175,10 @@ class SDCardController:
 
 		self.spi.writebytes([0xff])
 
+	# To read blocks in SD card
+	# block_num: start block
+	# buf: lenth = multiple of 512
+	# return: list(hex)
 	def read_blocks(self, block_num, buf):
 		nblocks = len(buf) // 512
 		assert nblocks and not len(buf) % 512, 'Buffer length is invalid'
@@ -197,6 +207,9 @@ class SDCardController:
 			return buf
 
 
+	# To write blocks in SD card
+	# block_num: start block
+	# buf: lenth = multiple of 512
 	def write_blocks(self, block_num, buf):
 		#nblocks = len(buf) // 512
 		#assert nblocks and not len(buf) % 512, 'Buffer length is invalid'
@@ -226,5 +239,7 @@ class SDCardController:
 				nblocks -= 1
 			self._write_token([_TOKEN_STOP_TRAN])
 
+	# To get the maximam block size of SD card
+	# The block size is the return value multiplied by 1024	
 	def get_sectors(self):
 		return self.sectors
