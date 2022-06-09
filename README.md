@@ -1,2 +1,2 @@
 # BeagleboneBlack_daicmod
-Beaglebone Blackに関する開発物を貯めていく
+Beaglebone Blackに関する開発物
